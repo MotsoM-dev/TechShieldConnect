@@ -21,10 +21,16 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.motsomdev.TechShieldConnect"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "252a3562-6838-4164-b44b-ce1657fef0fb"
+      }
     }
   }
 }
