@@ -1,4 +1,4 @@
-import { Animated, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import type { RootTab, ThemeMode } from '../types/navigation';
 import { TABS } from '../data/mockData';
 import { styles } from '../theme/styles';
@@ -13,32 +13,10 @@ type SetScreenButtonProps = {
 export function TopBar({ theme }: { theme: ThemeMode }) {
   return (
     <View style={[styles.topBar, theme === 'light' && styles.topBarLight]}>
-      <Text style={[styles.topBarTitle, theme === 'light' && styles.topBarTitleLight]}>TechShieldConnect</Text>
-      <Text style={styles.topBarSubtitle}>Advanced Protection, Invisible Strength</Text>
-    </View>
-  );
-}
-
-export function BrandHeader({ theme, pulse }: { theme: ThemeMode; pulse: Animated.Value }) {
-  return (
-    <View style={[styles.brandBlock, theme === 'light' && styles.brandBlockLight]}>
-      <Animated.Image
-        source={require('../../assets/techShield-logo.jpg')}
-        style={[
-          styles.logo,
-          {
-            transform: [
-              {
-                scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] }),
-              },
-            ],
-          },
-        ]}
-      />
-      <View style={{ flex: 1 }}>
-        <Text style={styles.kicker}>TechShieldConnect</Text>
-        <Text style={styles.tagline}>Advanced Protection, Invisible Strength</Text>
+      <View style={[styles.topBarLogoFrame, theme === 'light' && styles.topBarLogoFrameLight]}>
+        <Image source={require('../../assets/techShield-logo.jpg')} style={styles.topBarLogo} />
       </View>
+      <Text style={[styles.topBarTitle, theme === 'light' && styles.topBarTitleLight]}>TechShieldConnect</Text>
     </View>
   );
 }
@@ -275,18 +253,6 @@ export function TabBar({
           ]}
           activeOpacity={0.85}
         >
-          <View
-            style={[
-              styles.tabIconWrap,
-              theme === 'light' ? styles.tabIconWrapLight : styles.tabIconWrapDark,
-              tab === activeTab && (theme === 'light' ? styles.tabIconWrapActiveLight : styles.tabIconWrapActiveDark),
-              tab === 'Home' && styles.tabIconWrapHome,
-            ]}
-          >
-            <Text style={[styles.tabIcon, theme === 'light' ? styles.tabIconLight : styles.tabIconDark]}>
-              {tabIcon(tab)}
-            </Text>
-          </View>
           <Text
             style={[
               styles.tabLabel,
@@ -301,17 +267,4 @@ export function TabBar({
       ))}
     </View>
   );
-}
-
-function tabIcon(tab: RootTab) {
-  switch (tab) {
-    case 'Home':
-      return 'H';
-    case 'Chat':
-      return 'C';
-    case 'Explore':
-      return 'E';
-    case 'Profile':
-      return 'P';
-  }
 }

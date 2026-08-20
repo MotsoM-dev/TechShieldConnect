@@ -26,10 +26,9 @@ export default function App() {
         setScreen={setScreen}
         theme={theme}
         setTheme={setTheme}
-        pulse={pulse}
       />
     ),
-    [pulse, screen, theme],
+    [screen, theme],
   );
 
   return (

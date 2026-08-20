@@ -1,5 +1,8 @@
-import { Animated, ScrollView } from 'react-native';
-import { BrandHeader } from '../components/ui';
+import { ScrollView } from 'react-native';
+import { ChatTabScreen } from '../features/tabs/chat';
+import { ExploreScreen } from '../features/tabs/explore';
+import { HomeScreen } from '../features/tabs/home';
+import { ProfileScreen } from '../features/tabs/profile';
 import {
   AcceptConfirmation,
   BusinessProfile,
@@ -10,7 +13,6 @@ import {
   RequestDetails,
   SubmittedScreen,
 } from '../screens/RequestFlow';
-import { ChatTab, ExploreTab, HomeTab, ProfileTab } from '../screens/Tabs';
 import { ChatScreen, SimpleListScreen, TrackingScreen, WarrantyScreen } from '../screens/SupportScreens';
 import { styles } from '../theme/styles';
 import type { AppScreen, RootTab, ThemeMode } from '../types/navigation';
@@ -20,10 +22,9 @@ type NavigatorProps = {
   setScreen: (screen: AppScreen) => void;
   theme: ThemeMode;
   setTheme: (theme: ThemeMode) => void;
-  pulse: Animated.Value;
 };
 
-export function AppNavigator({ screen, setScreen, theme, setTheme, pulse }: NavigatorProps) {
+export function AppNavigator({ screen, setScreen, theme, setTheme }: NavigatorProps) {
   if (screen.name === 'tabs') {
     return (
       <TabStack
@@ -31,7 +32,6 @@ export function AppNavigator({ screen, setScreen, theme, setTheme, pulse }: Navi
         setScreen={setScreen}
         theme={theme}
         setTheme={setTheme}
-        pulse={pulse}
       />
     );
   }
@@ -77,21 +77,35 @@ function TabStack({
   setScreen,
   theme,
   setTheme,
-  pulse,
 }: {
   tab: RootTab;
   setScreen: (screen: AppScreen) => void;
   theme: ThemeMode;
   setTheme: (theme: ThemeMode) => void;
-  pulse: Animated.Value;
 }) {
   return (
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <BrandHeader theme={theme} pulse={pulse} />
-      {tab === 'Home' ? <HomeTab onCreate={() => setScreen({ name: 'create-step-1' })} onNotifications={() => setScreen({ name: 'notifications' })} theme={theme} /> : null}
-      {tab === 'Chat' ? <ChatTab theme={theme} /> : null}
-      {tab === 'Explore' ? <ExploreTab onBusiness={() => setScreen({ name: 'business-profile' })} theme={theme} /> : null}
-      {tab === 'Profile' ? <ProfileTab onEdit={() => setScreen({ name: 'edit-profile' })} onSettings={() => setScreen({ name: 'settings' })} onHelp={() => setScreen({ name: 'help' })} onHistory={() => setScreen({ name: 'repair-history' })} theme={theme} onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')} /> : null}
+      {tab === 'Home' ? (
+        <HomeScreen
+          onCreateRequest={() => setScreen({ name: 'create-step-1' })}
+          onNotifications={() => setScreen({ name: 'notifications' })}
+          theme={theme}
+        />
+      ) : null}
+      {tab === 'Chat' ? <ChatTabScreen theme={theme} /> : null}
+      {tab === 'Explore' ? (
+        <ExploreScreen onOpenBusiness={() => setScreen({ name: 'business-profile' })} theme={theme} />
+      ) : null}
+      {tab === 'Profile' ? (
+        <ProfileScreen
+          onEditProfile={() => setScreen({ name: 'edit-profile' })}
+          onSettings={() => setScreen({ name: 'settings' })}
+          onHelp={() => setScreen({ name: 'help' })}
+          onHistory={() => setScreen({ name: 'repair-history' })}
+          onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          theme={theme}
+        />
+      ) : null}
     </ScrollView>
   );
 }
