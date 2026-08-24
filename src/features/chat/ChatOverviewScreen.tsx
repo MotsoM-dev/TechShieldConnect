@@ -1,13 +1,13 @@
 import { View } from 'react-native';
-import { ChatMock, HeroCard, Section, StackButton } from '../../../components/ui';
-import { styles } from '../../../theme/styles';
-import type { ThemeMode } from '../../../types/navigation';
+import { ChatMock, HeroCard, Section, StackButton } from '../../shared/components/ui';
+import { styles } from '../../shared/theme/styles';
+import type { ThemeMode } from '../../shared/types/navigation';
 
 type ChatScreenProps = {
   theme: ThemeMode;
 };
 
-export function ChatTabScreen({ theme }: ChatScreenProps) {
+export function ChatOverviewScreen({ theme }: ChatScreenProps) {
   return (
     <View style={styles.stackGap}>
       <HeroCard

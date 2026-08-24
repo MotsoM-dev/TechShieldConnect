@@ -1,7 +1,7 @@
 import { View } from 'react-native';
-import { GlassToggle, HeroCard, InfoCard, StackButton } from '../../../components/ui';
-import { styles } from '../../../theme/styles';
-import type { ThemeMode } from '../../../types/navigation';
+import { GlassToggle, HeroCard, InfoCard, StackButton } from '../../../shared/components/ui';
+import { styles } from '../../../shared/theme/styles';
+import type { ThemeMode } from '../../../shared/types/navigation';
 
 type ProfileScreenProps = {
   onEditProfile: () => void;

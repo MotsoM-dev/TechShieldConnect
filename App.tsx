@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
-import { TabBar, TopBar } from './src/components/ui';
-import { AppNavigator } from './src/navigation/AppNavigator';
-import { styles } from './src/theme/styles';
-import type { AppScreen, ThemeMode } from './src/types/navigation';
+import { AppNavigator } from './src/app/AppNavigator';
+import { TabBar, TopBar } from './src/shared/components/ui';
+import { styles } from './src/shared/theme/styles';
+import type { AppScreen, ThemeMode } from './src/shared/types/navigation';
 
 export default function App() {
   const [screen, setScreen] = useState<AppScreen>({ name: 'tabs', tab: 'Home' });
   const [theme, setTheme] = useState<ThemeMode>('dark');
   const pulse = useRef(new Animated.Value(0)).current;
+  const shouldShowTopBar = !['create-step-1', 'create-step-2', 'create-step-3'].includes(screen.name);
 
   useEffect(() => {
     Animated.loop(
@@ -33,7 +34,7 @@ export default function App() {
 
   return (
     <View style={[styles.app, theme === 'light' && styles.appLight]}>
-      <TopBar theme={theme} />
+      {shouldShowTopBar ? <TopBar theme={theme} /> : null}
       <Animated.View
         style={[
           styles.glowA,

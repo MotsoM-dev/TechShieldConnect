@@ -1,0 +1,1 @@
+export { TechCareScreen } from './TechCareScreen';

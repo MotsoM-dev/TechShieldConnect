@@ -1,1 +1,0 @@
-export { ChatTabScreen } from './ChatScreen';

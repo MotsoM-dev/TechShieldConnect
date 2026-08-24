@@ -1,4 +1,15 @@
-export type RootTab = 'Home' | 'Chat' | 'Explore' | 'Profile';
+export type RootTab = 'Profile' | 'Explore' | 'Home' | 'Market' | 'TechCare';
+
+export type RepairRequestDraft = {
+  deviceCategory: string;
+  brand: string;
+  problemDescription: string;
+  issue: string;
+  area: string;
+  preferredTime: string;
+  budget: string;
+  photos: string[];
+};
 
 export type AppScreen =
   | { name: 'tabs'; tab: RootTab }

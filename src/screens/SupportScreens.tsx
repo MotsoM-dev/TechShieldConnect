@@ -1,4 +1,4 @@
-import { CenterScreen, ChatMock, InfoCard, Section, StackButton } from '../components/ui';
+import { CenterScreen, ChatMock, InfoCard, Section, StackButton } from '../shared/components/ui';
 
 export function TrackingScreen({
   onChat,

@@ -1,6 +1,8 @@
-import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { Image, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import type { RootTab, ThemeMode } from '../types/navigation';
-import { TABS } from '../data/mockData';
+import { notifications, TABS } from '../data/mockData';
 import { styles } from '../theme/styles';
 
 type SetScreenButtonProps = {
@@ -11,12 +13,47 @@ type SetScreenButtonProps = {
 };
 
 export function TopBar({ theme }: { theme: ThemeMode }) {
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const light = theme === 'light';
+
   return (
     <View style={[styles.topBar, theme === 'light' && styles.topBarLight]}>
-      <View style={[styles.topBarLogoFrame, theme === 'light' && styles.topBarLogoFrameLight]}>
-        <Image source={require('../../assets/techShield-logo.jpg')} style={styles.topBarLogo} />
-      </View>
+      <Image
+        source={
+          light
+            ? require('../../../assets/techShield-logo-light.png')
+            : require('../../../assets/techShield-logo.jpg')
+        }
+        style={[styles.topBarLogo, light && styles.topBarLogoLight]}
+        resizeMode="contain"
+      />
       <Text style={[styles.topBarTitle, theme === 'light' && styles.topBarTitleLight]}>TechShieldConnect</Text>
+      <TouchableOpacity
+        activeOpacity={0.82}
+        onPress={() => setNotificationsOpen(true)}
+        style={[styles.topBarAlert, theme === 'light' && styles.topBarAlertLight]}
+      >
+        <Ionicons name="notifications" size={22} color={light ? '#131a3a' : '#ffffff'} />
+        <View style={styles.topBarAlertBadge} />
+      </TouchableOpacity>
+      <Modal
+        visible={notificationsOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setNotificationsOpen(false)}
+      >
+        <TouchableOpacity activeOpacity={1} style={styles.notificationBackdrop} onPress={() => setNotificationsOpen(false)}>
+          <View style={[styles.notificationDropdown, light && styles.notificationDropdownLight]}>
+            <Text style={[styles.notificationTitle, light && styles.darkReadableText]}>Notifications</Text>
+            {notifications.map((notification) => (
+              <View key={notification} style={styles.notificationItem}>
+                <View style={styles.notificationDot} />
+                <Text style={[styles.notificationText, light && styles.darkReadableText]}>{notification}</Text>
+              </View>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -70,7 +107,7 @@ export function SearchCard({ theme }: { theme: ThemeMode }) {
       </Text>
       <View style={styles.searchLine} />
       <Text style={[styles.searchPlaceholder, theme === 'light' && styles.darkReadableMuted]}>
-        phone repair near Sandton
+        phone repair near Beacon Bay
       </Text>
     </View>
   );
@@ -171,12 +208,14 @@ export function ChatMock({ theme }: { theme: ThemeMode }) {
   );
 }
 
-export function TextArea() {
+export function TextArea({ value, onChangeText }: { value?: string; onChangeText?: (value: string) => void }) {
   return (
     <TextInput
       style={styles.input}
       placeholder="Describe the problem..."
       placeholderTextColor="#8f98c7"
+      value={value}
+      onChangeText={onChangeText}
       multiline
     />
   );
@@ -250,6 +289,7 @@ export function TabBar({
             theme === 'light' ? styles.tabButtonLight : styles.tabButtonDark,
             tab === activeTab && (theme === 'light' ? styles.tabButtonActiveLight : styles.tabButtonActiveDark),
             tab === 'Home' && styles.tabButtonHome,
+            tab === activeTab && tab === 'Home' && styles.tabButtonHomeActive,
           ]}
           activeOpacity={0.85}
         >
@@ -259,6 +299,7 @@ export function TabBar({
               theme === 'light' ? styles.tabLabelLight : styles.tabLabelDark,
               tab === activeTab && (theme === 'light' ? styles.tabLabelActiveLight : styles.tabLabelActiveDark),
               tab === 'Home' && styles.tabLabelHome,
+              tab === activeTab && tab === 'Home' && styles.tabLabelHomeActive,
             ]}
           >
             {tab}

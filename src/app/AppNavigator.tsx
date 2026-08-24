@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { ScrollView } from 'react-native';
-import { ChatTabScreen } from '../features/tabs/chat';
-import { ExploreScreen } from '../features/tabs/explore';
-import { HomeScreen } from '../features/tabs/home';
-import { ProfileScreen } from '../features/tabs/profile';
+import { ExploreScreen } from '../features/customer/explore';
+import { HomeScreen } from '../features/customer/home';
+import { MarketScreen } from '../features/customer/market';
+import { ProfileScreen } from '../features/customer/profile';
+import { TechCareScreen } from '../features/customer/tech-care';
 import {
   AcceptConfirmation,
   BusinessProfile,
@@ -14,8 +16,8 @@ import {
   SubmittedScreen,
 } from '../screens/RequestFlow';
 import { ChatScreen, SimpleListScreen, TrackingScreen, WarrantyScreen } from '../screens/SupportScreens';
-import { styles } from '../theme/styles';
-import type { AppScreen, RootTab, ThemeMode } from '../types/navigation';
+import { styles } from '../shared/theme/styles';
+import type { AppScreen, RepairRequestDraft, RootTab, ThemeMode } from '../shared/types/navigation';
 
 type NavigatorProps = {
   screen: AppScreen;
@@ -25,6 +27,18 @@ type NavigatorProps = {
 };
 
 export function AppNavigator({ screen, setScreen, theme, setTheme }: NavigatorProps) {
+  const [requestDraft, setRequestDraft] = useState<RepairRequestDraft>({
+    deviceCategory: 'Phone',
+    brand: 'Samsung',
+    problemDescription: 'Screen is cracked and flickering after a drop.',
+    issue: 'Screen cracked',
+    area: 'Beacon Bay',
+    preferredTime: 'Tomorrow morning',
+    budget: 'R500 - R1500',
+    photos: [],
+  });
+  const [hasSubmittedRequest, setHasSubmittedRequest] = useState(false);
+
   if (screen.name === 'tabs') {
     return (
       <TabStack
@@ -32,17 +46,19 @@ export function AppNavigator({ screen, setScreen, theme, setTheme }: NavigatorPr
         setScreen={setScreen}
         theme={theme}
         setTheme={setTheme}
+        requestDraft={requestDraft}
+        hasSubmittedRequest={hasSubmittedRequest}
       />
     );
   }
 
   switch (screen.name) {
     case 'create-step-1':
-      return <CreateStepOne onNext={() => setScreen({ name: 'create-step-2' })} onBack={() => setScreen({ name: 'tabs', tab: 'Home' })} />;
+      return <CreateStepOne draft={requestDraft} setDraft={setRequestDraft} onNext={() => setScreen({ name: 'create-step-2' })} onBack={() => setScreen({ name: 'tabs', tab: 'Home' })} />;
     case 'create-step-2':
-      return <CreateStepTwo onNext={() => setScreen({ name: 'create-step-3' })} onBack={() => setScreen({ name: 'create-step-1' })} />;
+      return <CreateStepTwo draft={requestDraft} setDraft={setRequestDraft} onNext={() => setScreen({ name: 'create-step-3' })} onBack={() => setScreen({ name: 'create-step-1' })} />;
     case 'create-step-3':
-      return <CreateStepThree onNext={() => setScreen({ name: 'request-submitted' })} onBack={() => setScreen({ name: 'create-step-2' })} />;
+      return <CreateStepThree draft={requestDraft} setDraft={setRequestDraft} onNext={() => { setHasSubmittedRequest(true); setScreen({ name: 'tabs', tab: 'Explore' }); }} onBack={() => setScreen({ name: 'create-step-2' })} />;
     case 'request-submitted':
       return <SubmittedScreen onViewRequests={() => setScreen({ name: 'tabs', tab: 'Home' })} />;
     case 'request-details':
@@ -56,7 +72,7 @@ export function AppNavigator({ screen, setScreen, theme, setTheme }: NavigatorPr
     case 'tracking':
       return <TrackingScreen onChat={() => setScreen({ name: 'chat' })} onWarranty={() => setScreen({ name: 'warranty' })} onBack={() => setScreen({ name: 'request-details' })} />;
     case 'chat':
-      return <ChatScreen onBack={() => setScreen({ name: 'tabs', tab: 'Chat' })} />;
+      return <ChatScreen onBack={() => setScreen({ name: 'tabs', tab: 'Home' })} />;
     case 'warranty':
       return <WarrantyScreen onBack={() => setScreen({ name: 'tracking' })} />;
     case 'notifications':
@@ -77,25 +93,35 @@ function TabStack({
   setScreen,
   theme,
   setTheme,
+  requestDraft,
+  hasSubmittedRequest,
 }: {
   tab: RootTab;
   setScreen: (screen: AppScreen) => void;
   theme: ThemeMode;
   setTheme: (theme: ThemeMode) => void;
+  requestDraft: RepairRequestDraft;
+  hasSubmittedRequest: boolean;
 }) {
   return (
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       {tab === 'Home' ? (
         <HomeScreen
           onCreateRequest={() => setScreen({ name: 'create-step-1' })}
-          onNotifications={() => setScreen({ name: 'notifications' })}
+          onMessageShop={() => setScreen({ name: 'chat' })}
           theme={theme}
         />
       ) : null}
-      {tab === 'Chat' ? <ChatTabScreen theme={theme} /> : null}
       {tab === 'Explore' ? (
-        <ExploreScreen onOpenBusiness={() => setScreen({ name: 'business-profile' })} theme={theme} />
+        <ExploreScreen
+          draft={requestDraft}
+          showRecommendations={hasSubmittedRequest}
+          onOpenBusiness={() => setScreen({ name: 'business-profile' })}
+          theme={theme}
+        />
       ) : null}
+      {tab === 'Market' ? <MarketScreen theme={theme} /> : null}
+      {tab === 'TechCare' ? <TechCareScreen theme={theme} /> : null}
       {tab === 'Profile' ? (
         <ProfileScreen
           onEditProfile={() => setScreen({ name: 'edit-profile' })}

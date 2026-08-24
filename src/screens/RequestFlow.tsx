@@ -1,32 +1,148 @@
-import { CenterScreen, InfoCard, Section, StackButton, TextArea, WizardShell } from '../components/ui';
-import { commonBrands, issueChips, quotes } from '../data/mockData';
+import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { CenterScreen, InfoCard, Section, StackButton, TextArea, WizardShell } from '../shared/components/ui';
+import { deviceBrandOptions, eastLondonAreas, issueChips, quotes } from '../shared/data/mockData';
+import { styles } from '../shared/theme/styles';
+import type { RepairRequestDraft } from '../shared/types/navigation';
 
-export function CreateStepOne({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+type DraftStepProps = {
+  draft: RepairRequestDraft;
+  setDraft: (draft: RepairRequestDraft) => void;
+  onNext: () => void;
+  onBack: () => void;
+};
+
+export function CreateStepOne({ draft, setDraft, onNext, onBack }: DraftStepProps) {
+  const brandOptions = deviceBrandOptions[draft.deviceCategory] ?? deviceBrandOptions.Other;
+  const showingCustomBrand = !brandOptions.includes(draft.brand) || draft.brand === 'Other';
+
+  const handleDeviceCategorySelect = (deviceCategory: string) => {
+    const nextBrandOptions = deviceBrandOptions[deviceCategory] ?? deviceBrandOptions.Other;
+    const brand = nextBrandOptions.includes(draft.brand) ? draft.brand : nextBrandOptions[0];
+    setDraft({ ...draft, deviceCategory, brand });
+  };
+
   return (
     <WizardShell title="Create Request - Step 1" subtitle="Select Device" onBack={onBack} onNext={onNext} nextLabel="Continue">
-      <Section theme="dark" title="Device Categories" chips={['Phone', 'Laptop', 'Tablet', 'Other']} />
-      <Section theme="dark" title="Common Brands" chips={commonBrands} />
+      <SelectableChips
+        title="Device Categories"
+        options={['Phone', 'Laptop', 'Tablet', 'Other']}
+        selected={draft.deviceCategory}
+        onSelect={handleDeviceCategorySelect}
+      />
+      <SelectableChips
+        title="Common Brands"
+        options={brandOptions}
+        selected={showingCustomBrand ? 'Other' : draft.brand}
+        onSelect={(brand) => setDraft({ ...draft, brand })}
+      />
+      {showingCustomBrand ? (
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Enter Brand</Text>
+          <TextInput
+            style={styles.singleLineInput}
+            placeholder="Type your device brand"
+            placeholderTextColor="#8f98c7"
+            value={draft.brand === 'Other' ? '' : draft.brand}
+            onChangeText={(customBrand) => setDraft({ ...draft, brand: customBrand })}
+          />
+        </View>
+      ) : null}
     </WizardShell>
   );
 }
 
-export function CreateStepTwo({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+export function CreateStepTwo({ draft, setDraft, onNext, onBack }: DraftStepProps) {
   return (
     <WizardShell title="Create Request - Step 2" subtitle="Describe Problem" onBack={onBack} onNext={onNext} nextLabel="Continue">
-      <TextArea />
-      <Section theme="dark" title="Common Issue Chips" chips={issueChips} />
-      <StackButton theme="dark" label="Upload Photos" onPress={() => {}} />
+      <TextArea
+        value={draft.problemDescription}
+        onChangeText={(problemDescription) => setDraft({ ...draft, problemDescription })}
+      />
+      <SelectableChips
+        title="Common Issue Chips"
+        options={issueChips}
+        selected={draft.issue}
+        onSelect={(issue) => setDraft({ ...draft, issue })}
+      />
+      <PhotoUploadCard />
     </WizardShell>
   );
 }
 
-export function CreateStepThree({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+function PhotoUploadCard() {
   return (
-    <WizardShell title="Create Request - Step 3" subtitle="Location & Preferences" onBack={onBack} onNext={onNext} nextLabel="Submit Request">
-      <Section theme="dark" title="Current Location / Address" chips={['Use current location', 'Enter address manually']} />
-      <Section theme="dark" title="Preferred Date / Time" chips={['Today afternoon', 'Tomorrow morning', 'This weekend']} />
-      <Section theme="dark" title="Budget Range (Optional)" chips={['Under R500', 'R500 - R1500', 'R1500+']} />
+    <View style={styles.sectionCard}>
+      <Text style={styles.sectionTitle}>Upload Damage Photos</Text>
+      <Text style={styles.uploadHint}>Add clear photos of the device so shops can quote accurately.</Text>
+      <View style={styles.uploadCard}>
+        <Text style={styles.uploadIcon}>+</Text>
+        <Text style={styles.uploadTitle}>Photo upload placeholder</Text>
+        <Text style={styles.uploadMeta}>Photo upload will be available soon</Text>
+      </View>
+    </View>
+  );
+}
+
+export function CreateStepThree({ draft, setDraft, onNext, onBack }: DraftStepProps) {
+  return (
+    <WizardShell title="Create Request - Step 3" subtitle="Location & Preferences" onBack={onBack} onNext={onNext} nextLabel="Find Shops">
+      <SelectableChips
+        title="East London Area"
+        options={eastLondonAreas}
+        selected={draft.area}
+        onSelect={(area) => setDraft({ ...draft, area })}
+      />
+      <SelectableChips
+        title="Preferred Date / Time"
+        options={['Today afternoon', 'Tomorrow morning', 'This weekend']}
+        selected={draft.preferredTime}
+        onSelect={(preferredTime) => setDraft({ ...draft, preferredTime })}
+      />
+      <SelectableChips
+        title="Budget Range (Optional)"
+        options={['Under R500', 'R500 - R1500', 'R1500+']}
+        selected={draft.budget}
+        onSelect={(budget) => setDraft({ ...draft, budget })}
+      />
+      <InfoCard
+        theme="dark"
+        rows={[
+          ['Device', `${draft.brand} ${draft.deviceCategory}`],
+          ['Problem', draft.issue],
+          ['Area', draft.area],
+        ]}
+      />
     </WizardShell>
+  );
+}
+
+function SelectableChips({
+  title,
+  options,
+  selected,
+  onSelect,
+}: {
+  title: string;
+  options: string[];
+  selected: string;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <View style={styles.sectionCard}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.chipWrap}>
+        {options.map((option) => (
+          <TouchableOpacity
+            key={option}
+            activeOpacity={0.82}
+            onPress={() => onSelect(option)}
+            style={[styles.chip, option === selected && styles.chipSelected]}
+          >
+            <Text style={styles.chipText}>{option}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
   );
 }
 
