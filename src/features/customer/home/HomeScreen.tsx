@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Image, ImageBackground, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { StackButton } from '../../../shared/components/ui';
+import { Animated, Image, Modal, Text, TouchableOpacity, View } from 'react-native';
+import { MediaCarousel, StackButton } from '../../../shared/components/ui';
 import {
   activeRepair,
   homeSpecials,
@@ -8,12 +8,22 @@ import {
   recentRepairCards,
   rotatingTechTips,
 } from '../../../shared/data/mockData';
+import { repairProgress } from '../../../shared/lib/repair';
 import { styles } from '../../../shared/theme/styles';
-import type { ThemeMode } from '../../../shared/types/navigation';
+import type { ConfirmedRequest, ThemeMode } from '../../../shared/types/navigation';
+
+const confirmedRequestRows = (request: ConfirmedRequest): [string, string][] => [
+  ['Device', `${request.draft.brand} ${request.draft.deviceCategory}`],
+  ['Problem', request.draft.issue],
+  ['Area', request.draft.area],
+  ['Budget', request.draft.budget],
+];
 
 type HomeScreenProps = {
   onCreateRequest: () => void;
   onMessageShop: () => void;
+  onTrackRepair: () => void;
+  confirmedRequest: ConfirmedRequest | null;
   theme: ThemeMode;
 };
 
@@ -23,7 +33,13 @@ const repairHeroImages = [
   require('../../../../assets/hero-happy-customer.png'),
 ];
 
-export function HomeScreen({ onCreateRequest, onMessageShop, theme }: HomeScreenProps) {
+export function HomeScreen({
+  onCreateRequest,
+  onMessageShop,
+  onTrackRepair,
+  confirmedRequest,
+  theme,
+}: HomeScreenProps) {
   const [tipIndex, setTipIndex] = useState(0);
   const [heroImageIndex, setHeroImageIndex] = useState(0);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
@@ -34,6 +50,16 @@ export function HomeScreen({ onCreateRequest, onMessageShop, theme }: HomeScreen
   const entrance = useRef(new Animated.Value(0)).current;
   const light = theme === 'light';
   const selectedRequest = recentRepairCards.find((request) => request.id === selectedRequestId);
+
+  // Progress is derived from elapsed time, so re-render periodically while a repair is live.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!confirmedRequest) return;
+    const interval = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(interval);
+  }, [confirmedRequest]);
+
+  const liveProgress = confirmedRequest ? repairProgress(confirmedRequest, now) : null;
 
   useEffect(() => {
     Animated.timing(entrance, { toValue: 1, duration: 650, useNativeDriver: true }).start();
@@ -124,9 +150,52 @@ export function HomeScreen({ onCreateRequest, onMessageShop, theme }: HomeScreen
         <Text style={[styles.tipText, light && styles.darkReadableText]}>{rotatingTechTips[tipIndex]}</Text>
       </Animated.View>
 
+      {confirmedRequest && liveProgress ? (
+        <View style={[styles.savedRequestCard, light && styles.lightSurface]}>
+          <View style={styles.savedRequestHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.sectionTitle, light && styles.darkReadableText, { marginBottom: 0 }]}>
+                Your Repair
+              </Text>
+              <Text style={[styles.homeMeta, light && styles.darkReadableMuted]}>
+                {confirmedRequest.reference} - {confirmedRequest.shopName}
+              </Text>
+            </View>
+            <Text style={styles.savedRequestBadge}>{liveProgress.stage}</Text>
+          </View>
+
+          <View style={styles.repairProgressBlock}>
+            <View style={styles.homeCardHeader}>
+              <Text style={[styles.homeMeta, light && styles.darkReadableMuted]}>
+                {liveProgress.remainingLabel}
+              </Text>
+              <Text style={styles.progressPercent}>{liveProgress.percent}%</Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${liveProgress.percent}%` }]} />
+            </View>
+            <Text style={[styles.homeMeta, light && styles.darkReadableMuted]}>
+              Ready by {liveProgress.etaLabel}
+            </Text>
+          </View>
+
+          {confirmedRequestRows(confirmedRequest).map(([label, value]) => (
+            <View key={label} style={styles.infoRow}>
+              <Text style={[styles.infoLabel, light && styles.darkReadableMuted]}>{label}</Text>
+              <Text style={[styles.infoValue, light && styles.darkReadableText]}>{value}</Text>
+            </View>
+          ))}
+
+          <View style={[styles.row, { marginTop: 10 }]}>
+            <StackButton theme={theme} label="Track Repair" onPress={onTrackRepair} compact />
+            <StackButton theme={theme} label="Message Shop" onPress={onMessageShop} compact />
+          </View>
+        </View>
+      ) : null}
+
       <SpecialsCarousel motion={specialsMotion} theme={theme} />
 
-      {activeRepair ? (
+      {!confirmedRequest && activeRepair ? (
         <View style={[styles.progressCard, light && styles.lightSurface]}>
           <View style={styles.homeCardHeader}>
             <View>
@@ -189,61 +258,37 @@ export function HomeScreen({ onCreateRequest, onMessageShop, theme }: HomeScreen
 }
 
 function PromotedCarousel({ motion, theme }: { motion: Animated.Value; theme: ThemeMode }) {
-  const light = theme === 'light';
-
   return (
-    <View style={styles.carouselBlock}>
-      <Text style={[styles.sectionTitle, light && styles.darkReadableText]}>Promoted</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <Animated.View
-          style={[
-            styles.carouselRow,
-            { transform: [{ translateX: motion.interpolate({ inputRange: [0, 1], outputRange: [0, -78] }) }] },
-          ]}
-        >
-          {[...promotedShops, ...promotedShops].map((shop, index) => (
-            <View key={`${shop.name}-${index}`} style={[styles.promotedCard, light && styles.promotedCardLight]}>
-              <ImageBackground source={{ uri: shop.imageUrl }} style={styles.promotedImage} imageStyle={styles.cardImageRadius}>
-                <View style={styles.imageShade} />
-                <View style={styles.imageGlassOrb} />
-                <Text style={styles.imageInitials}>{shop.name.slice(0, 2).toUpperCase()}</Text>
-              </ImageBackground>
-              <Text style={[styles.cardTitle, light && styles.darkReadableText]}>{shop.name}</Text>
-              <Text style={[styles.homeMeta, light && styles.darkReadableMuted]}>{shop.area} - {shop.rating} rating</Text>
-              <Text style={[styles.cardCaption, light && styles.darkReadableMuted]}>{shop.caption}</Text>
-            </View>
-          ))}
-        </Animated.View>
-      </ScrollView>
-    </View>
+    <MediaCarousel
+      title="Promoted"
+      theme={theme}
+      motion={motion}
+      cards={promotedShops.map((shop) => ({
+        key: shop.name,
+        imageUrl: shop.imageUrl,
+        title: shop.name,
+        meta: `${shop.area} - ${shop.rating} rating`,
+        caption: shop.caption,
+        initials: shop.name.slice(0, 2).toUpperCase(),
+      }))}
+    />
   );
 }
 
 function SpecialsCarousel({ motion, theme }: { motion: Animated.Value; theme: ThemeMode }) {
-  const light = theme === 'light';
-
   return (
-    <View style={styles.carouselBlock}>
-      <Text style={[styles.sectionTitle, light && styles.darkReadableText]}>Specials Near You</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <Animated.View
-          style={[
-            styles.carouselRow,
-            { transform: [{ translateX: motion.interpolate({ inputRange: [0, 1], outputRange: [0, -52] }) }] },
-          ]}
-        >
-          {[...homeSpecials, ...homeSpecials].map((special, index) => (
-            <View key={`${special.title}-${index}`} style={[styles.specialCard, light && styles.promotedCardLight]}>
-              <ImageBackground source={{ uri: special.imageUrl }} style={styles.specialImage} imageStyle={styles.cardImageRadius}>
-                <View style={styles.imageShade} />
-                <Text style={styles.specialPrice}>{special.price}</Text>
-              </ImageBackground>
-              <Text style={[styles.cardTitle, light && styles.darkReadableText]}>{special.title}</Text>
-              <Text style={[styles.cardCaption, light && styles.darkReadableMuted]}>{special.caption}</Text>
-            </View>
-          ))}
-        </Animated.View>
-      </ScrollView>
-    </View>
+    <MediaCarousel
+      title="Specials Near You"
+      theme={theme}
+      motion={motion}
+      variant="special"
+      cards={homeSpecials.map((special) => ({
+        key: special.title,
+        imageUrl: special.imageUrl,
+        title: special.title,
+        caption: special.caption,
+        badge: special.price,
+      }))}
+    />
   );
 }

@@ -9,7 +9,7 @@ export default function App() {
   const [screen, setScreen] = useState<AppScreen>({ name: 'tabs', tab: 'Home' });
   const [theme, setTheme] = useState<ThemeMode>('dark');
   const pulse = useRef(new Animated.Value(0)).current;
-  const shouldShowTopBar = !['create-step-1', 'create-step-2', 'create-step-3'].includes(screen.name);
+  const shouldShowTopBar = !['create-step-1', 'create-step-2', 'create-step-3', 'chat'].includes(screen.name);
 
   useEffect(() => {
     Animated.loop(
@@ -34,7 +34,9 @@ export default function App() {
 
   return (
     <View style={[styles.app, theme === 'light' && styles.appLight]}>
-      {shouldShowTopBar ? <TopBar theme={theme} /> : null}
+      {shouldShowTopBar ? (
+        <TopBar theme={theme} onOpenChat={() => setScreen({ name: 'chat' })} />
+      ) : null}
       <Animated.View
         style={[
           styles.glowA,

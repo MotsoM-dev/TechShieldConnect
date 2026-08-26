@@ -12,12 +12,21 @@ import {
   CreateStepThree,
   CreateStepTwo,
   QuotesList,
+  RequestConfirm,
   RequestDetails,
   SubmittedScreen,
 } from '../screens/RequestFlow';
 import { ChatScreen, SimpleListScreen, TrackingScreen, WarrantyScreen } from '../screens/SupportScreens';
+import { activeRepair } from '../shared/data/mockData';
+import { buildConfirmedRequest } from '../shared/lib/repair';
 import { styles } from '../shared/theme/styles';
-import type { AppScreen, RepairRequestDraft, RootTab, ThemeMode } from '../shared/types/navigation';
+import type {
+  AppScreen,
+  ConfirmedRequest,
+  RepairRequestDraft,
+  RootTab,
+  ThemeMode,
+} from '../shared/types/navigation';
 
 type NavigatorProps = {
   screen: AppScreen;
@@ -37,7 +46,16 @@ export function AppNavigator({ screen, setScreen, theme, setTheme }: NavigatorPr
     budget: 'R500 - R1500',
     photos: [],
   });
-  const [hasSubmittedRequest, setHasSubmittedRequest] = useState(false);
+  const [confirmedRequest, setConfirmedRequest] = useState<ConfirmedRequest | null>(null);
+  // The shop the user picked for this request; the top bar chat opens this conversation.
+  const [selectedShopName, setSelectedShopName] = useState(activeRepair.shop);
+
+  const confirmRequest = () => {
+    const confirmed = buildConfirmedRequest(requestDraft);
+    setConfirmedRequest(confirmed);
+    setSelectedShopName(confirmed.shopName);
+    setScreen({ name: 'request-submitted' });
+  };
 
   if (screen.name === 'tabs') {
     return (
@@ -47,44 +65,47 @@ export function AppNavigator({ screen, setScreen, theme, setTheme }: NavigatorPr
         theme={theme}
         setTheme={setTheme}
         requestDraft={requestDraft}
-        hasSubmittedRequest={hasSubmittedRequest}
+        confirmedRequest={confirmedRequest}
+        onSelectShop={setSelectedShopName}
       />
     );
   }
 
   switch (screen.name) {
     case 'create-step-1':
-      return <CreateStepOne draft={requestDraft} setDraft={setRequestDraft} onNext={() => setScreen({ name: 'create-step-2' })} onBack={() => setScreen({ name: 'tabs', tab: 'Home' })} />;
+      return <CreateStepOne theme={theme} draft={requestDraft} setDraft={setRequestDraft} onNext={() => setScreen({ name: 'create-step-2' })} onBack={() => setScreen({ name: 'tabs', tab: 'Home' })} />;
     case 'create-step-2':
-      return <CreateStepTwo draft={requestDraft} setDraft={setRequestDraft} onNext={() => setScreen({ name: 'create-step-3' })} onBack={() => setScreen({ name: 'create-step-1' })} />;
+      return <CreateStepTwo theme={theme} draft={requestDraft} setDraft={setRequestDraft} onNext={() => setScreen({ name: 'create-step-3' })} onBack={() => setScreen({ name: 'create-step-1' })} />;
     case 'create-step-3':
-      return <CreateStepThree draft={requestDraft} setDraft={setRequestDraft} onNext={() => { setHasSubmittedRequest(true); setScreen({ name: 'tabs', tab: 'Explore' }); }} onBack={() => setScreen({ name: 'create-step-2' })} />;
+      return <CreateStepThree theme={theme} draft={requestDraft} setDraft={setRequestDraft} onNext={() => setScreen({ name: 'request-confirm' })} onBack={() => setScreen({ name: 'create-step-2' })} />;
+    case 'request-confirm':
+      return <RequestConfirm theme={theme} draft={requestDraft} onConfirm={confirmRequest} onBack={() => setScreen({ name: 'create-step-3' })} />;
     case 'request-submitted':
-      return <SubmittedScreen onViewRequests={() => setScreen({ name: 'tabs', tab: 'Home' })} />;
+      return <SubmittedScreen theme={theme} request={confirmedRequest} onViewRequests={() => setScreen({ name: 'tabs', tab: 'Home' })} />;
     case 'request-details':
-      return <RequestDetails onBack={() => setScreen({ name: 'tabs', tab: 'Home' })} onViewQuotes={() => setScreen({ name: 'quotes-list' })} onTrack={() => setScreen({ name: 'tracking' })} />;
+      return <RequestDetails theme={theme} onBack={() => setScreen({ name: 'tabs', tab: 'Home' })} onViewQuotes={() => setScreen({ name: 'quotes-list' })} onTrack={() => setScreen({ name: 'tracking' })} />;
     case 'quotes-list':
-      return <QuotesList onBack={() => setScreen({ name: 'request-details' })} onOpenBusiness={() => setScreen({ name: 'business-profile' })} onAccept={() => setScreen({ name: 'accept-confirmation' })} />;
+      return <QuotesList theme={theme} onBack={() => setScreen({ name: 'request-details' })} onOpenBusiness={() => setScreen({ name: 'business-profile' })} onAccept={() => setScreen({ name: 'accept-confirmation' })} />;
     case 'business-profile':
-      return <BusinessProfile onBack={() => setScreen({ name: 'quotes-list' })} onChat={() => setScreen({ name: 'chat' })} onAccept={() => setScreen({ name: 'accept-confirmation' })} />;
+      return <BusinessProfile theme={theme} onBack={() => setScreen({ name: 'tabs', tab: 'Explore' })} onChat={() => setScreen({ name: 'chat' })} onAccept={() => setScreen({ name: 'accept-confirmation' })} />;
     case 'accept-confirmation':
-      return <AcceptConfirmation onDone={() => setScreen({ name: 'tracking' })} />;
+      return <AcceptConfirmation theme={theme} onDone={() => setScreen({ name: 'tracking' })} />;
     case 'tracking':
-      return <TrackingScreen onChat={() => setScreen({ name: 'chat' })} onWarranty={() => setScreen({ name: 'warranty' })} onBack={() => setScreen({ name: 'request-details' })} />;
+      return <TrackingScreen theme={theme} request={confirmedRequest} onChat={() => setScreen({ name: 'chat' })} onWarranty={() => setScreen({ name: 'warranty' })} onBack={() => setScreen({ name: 'request-details' })} />;
     case 'chat':
-      return <ChatScreen onBack={() => setScreen({ name: 'tabs', tab: 'Home' })} />;
+      return <ChatScreen shopName={selectedShopName} theme={theme} onBack={() => setScreen({ name: 'tabs', tab: 'Home' })} />;
     case 'warranty':
-      return <WarrantyScreen onBack={() => setScreen({ name: 'tracking' })} />;
+      return <WarrantyScreen theme={theme} onBack={() => setScreen({ name: 'tracking' })} />;
     case 'notifications':
-      return <SimpleListScreen title="Notifications" subtitle="Quotes received, status updates, and messages." items={['New quote from FixPro Electronics', 'Your request moved to In Progress', 'Message from Urban Tech Clinic']} onBack={() => setScreen({ name: 'tabs', tab: 'Home' })} />;
+      return <SimpleListScreen theme={theme} icon="notifications" title="Notifications" subtitle="Quotes received, status updates, and messages." items={['New quote from FixPro Electronics', 'Your request moved to In Progress', 'Message from Urban Tech Clinic']} onBack={() => setScreen({ name: 'tabs', tab: 'Home' })} />;
     case 'edit-profile':
-      return <SimpleListScreen title="Edit Profile" subtitle="Update personal details and profile photo." items={['Full name', 'Email address', 'Phone number', 'Profile photo']} onBack={() => setScreen({ name: 'tabs', tab: 'Profile' })} />;
+      return <SimpleListScreen theme={theme} icon="person" title="Edit Profile" subtitle="Update personal details and profile photo." items={['Full name', 'Email address', 'Phone number', 'Profile photo']} onBack={() => setScreen({ name: 'tabs', tab: 'Profile' })} />;
     case 'settings':
-      return <SimpleListScreen title="Settings" subtitle="Notifications, language, dark mode, and privacy." items={['Notifications preferences', 'Language', 'Dark mode', 'Privacy']} onBack={() => setScreen({ name: 'tabs', tab: 'Profile' })} />;
+      return <SimpleListScreen theme={theme} icon="settings" title="Settings" subtitle="Notifications, language, dark mode, and privacy." items={['Notifications preferences', 'Language', 'Dark mode', 'Privacy']} onBack={() => setScreen({ name: 'tabs', tab: 'Profile' })} />;
     case 'help':
-      return <SimpleListScreen title="Help & Support" subtitle="FAQs, contact support, and report a problem." items={['FAQs', 'Contact Support', 'Report a Problem']} onBack={() => setScreen({ name: 'tabs', tab: 'Profile' })} />;
+      return <SimpleListScreen theme={theme} icon="help-circle" title="Help & Support" subtitle="FAQs, contact support, and report a problem." items={['FAQs', 'Contact Support', 'Report a Problem']} onBack={() => setScreen({ name: 'tabs', tab: 'Profile' })} />;
     case 'repair-history':
-      return <SimpleListScreen title="Repair History" subtitle="Full list of completed repairs with warranties." items={['iPhone 14 back glass repair', 'LG fridge compressor service', 'PS5 HDMI port repair']} onBack={() => setScreen({ name: 'tabs', tab: 'Profile' })} />;
+      return <SimpleListScreen theme={theme} icon="construct" title="Repair History" subtitle="Full list of completed repairs with warranties." items={['iPhone 14 back glass repair', 'LG fridge compressor service', 'PS5 HDMI port repair']} onBack={() => setScreen({ name: 'tabs', tab: 'Profile' })} />;
   }
 }
 
@@ -94,14 +115,16 @@ function TabStack({
   theme,
   setTheme,
   requestDraft,
-  hasSubmittedRequest,
+  confirmedRequest,
+  onSelectShop,
 }: {
   tab: RootTab;
   setScreen: (screen: AppScreen) => void;
   theme: ThemeMode;
   setTheme: (theme: ThemeMode) => void;
   requestDraft: RepairRequestDraft;
-  hasSubmittedRequest: boolean;
+  confirmedRequest: ConfirmedRequest | null;
+  onSelectShop: (shopName: string) => void;
 }) {
   return (
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -109,14 +132,19 @@ function TabStack({
         <HomeScreen
           onCreateRequest={() => setScreen({ name: 'create-step-1' })}
           onMessageShop={() => setScreen({ name: 'chat' })}
+          onTrackRepair={() => setScreen({ name: 'tracking' })}
+          confirmedRequest={confirmedRequest}
           theme={theme}
         />
       ) : null}
       {tab === 'Explore' ? (
         <ExploreScreen
           draft={requestDraft}
-          showRecommendations={hasSubmittedRequest}
-          onOpenBusiness={() => setScreen({ name: 'business-profile' })}
+          showRecommendations={confirmedRequest !== null}
+          onOpenBusiness={(shopName) => {
+            onSelectShop(shopName);
+            setScreen({ name: 'business-profile' });
+          }}
           theme={theme}
         />
       ) : null}

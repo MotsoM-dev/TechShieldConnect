@@ -11,11 +11,22 @@ export type RepairRequestDraft = {
   photos: string[];
 };
 
+/** A repair request the user has reviewed and confirmed. Drives the Home progress card. */
+export type ConfirmedRequest = {
+  reference: string;
+  draft: RepairRequestDraft;
+  shopName: string;
+  shopArea: string;
+  confirmedAt: number;
+  estimatedHours: number;
+};
+
 export type AppScreen =
   | { name: 'tabs'; tab: RootTab }
   | { name: 'create-step-1' }
   | { name: 'create-step-2' }
   | { name: 'create-step-3' }
+  | { name: 'request-confirm' }
   | { name: 'request-submitted' }
   | { name: 'request-details' }
   | { name: 'quotes-list' }
